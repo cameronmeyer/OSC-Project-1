@@ -141,6 +141,14 @@
   <ItemGroup>
     <ClCompile Include="Project1.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="output.txt" />
+    <Text Include="proj1_readme.txt" />
+    <Text Include="sample1.txt" />
+    <Text Include="sample2.txt" />
+    <Text Include="sample3.txt" />
+    <Text Include="sample4.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
