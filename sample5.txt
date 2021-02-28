@@ -1,0 +1,11 @@
+1 // load value into ac
+5 
+7 // write value to address 263
+263
+2 // read value from address 263 to ac
+263 
+9 // print ac to stout
+1
+50
+.263
+62

@@ -1,4 +1,4 @@
-#include <stack>
+/*#include <stack>
 #include <string>
 #include <fstream>
 #include <vector>
@@ -12,14 +12,30 @@ const int start_system_code = 1000;
 const int memory_size = 2000;
 int memory[memory_size];
 
-int read(int address)
+int read_from_mem(int address)
 {
-    return 0;
+    if(address > -1 && address < memory_size)
+    {
+        return memory[address];
+    }
+    else
+    {
+        // throw an out of bounds error
+    }
 }
 
-bool write(int address, int data)
+bool write_to_mem(int address, int data)
 {
-    return 0;
+    if(address > -1 && address < memory_size)
+    {
+        memory[address] = data;
+        return true;
+    }
+    else
+    {
+        // throw an out of bounds error
+        return false;
+    }
 }
 
 vector<int> readIntFromString(string s)
@@ -87,3 +103,21 @@ void loadMemory(string fileName)
         cout << "File not found." << endl;
     }
 }
+
+void executeMemory()
+{
+    int flag; //memory index
+    int address; 
+    int value;
+    string str;
+
+    while(true)
+    {
+        //read from cpu->mem pipe and store value in flag
+        read(cpu_to_mem[0], &flag, sizeof(flag));
+        if(flag > -1)
+        {
+            value = memory[flag];
+        }
+    }
+}*/

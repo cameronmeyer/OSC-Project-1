@@ -9,17 +9,137 @@
 #include <unistd.h>
 using namespace std;
 
-int read(int address);
-bool write(int address, int data);
-void loadMemory(string fileName);
+////////////////////
+/* MEMORY SECTION */
+////////////////////
 
 int PC, SP, IR, AC, X, Y;
+int timer = 0;
+int tempReg = 0;
+int cpu_to_mem[2];
+int mem_to_cpu[2];
+
+const string WHITESPACE = "\n\r\t\f\v";
+const int start_address = 0;
+const int start_system_code = 1000;
+const int memory_size = 2000;
+int memory[memory_size];
+
+int read_from_mem(int address)
+{
+    write(cpu_to_mem[1], &address, sizeof(address));
+    int result;
+    read(mem_to_cpu[0], &result, sizeof(result));
+    return result;
+}
+
+bool write_to_mem(int address, int data)
+{
+    int write_flag = -1;
+    write(cpu_to_mem[1], &write_flag, sizeof(write_flag));
+    write(cpu_to_mem[1], &address, sizeof(address));
+    write(cpu_to_mem[1], &data, sizeof(data));
+}
+
+vector<int> readIntFromString(string s)
+{
+    string number = s.substr(0, s.find(WHITESPACE));
+    try
+    {
+        std::string::size_type sz;
+        int result = stoi(number, &sz);
+        return vector<int>{1, result};
+    }
+    catch(...)
+    {
+        return vector<int>{-1, 0};
+        cout << ("Not a valid command input");
+    }
+}
+
+void loadMemory(string fileName)
+{
+    ifstream file;
+    file.open(fileName);
+    if (file)
+    {
+        string line = "";
+        int memory_Address = 0;
+
+        while (getline(file, line))
+        {
+            if(line.substr(0, 1) == ".")
+            {
+                memory_Address = readIntFromString(line.substr(1, line.length()))[1] - 1; // Decrement by 1 since it'll be added to later
+            }
+            else
+            {
+                vector<int> readInt = readIntFromString(line);
+                int instruction = readInt[1];
+
+                if(readInt[0] != -1)
+                {
+                    if(memory_Address >= 0 && memory_Address < memory_size)
+                    {
+                        memory[memory_Address] = instruction;
+                    }
+                    else
+                    {
+                        // throw an out of bounds error
+                    }
+                }
+            }
+
+            memory_Address++;
+        }
+        file.close();
+    }
+    else
+    {
+        cout << "File not found." << endl;
+    }
+}
+
+void executeMemory()
+{
+    int flag; //memory index
+    int address; 
+    int value;
+    string str;
+
+    while(true)
+    {
+        //read from cpu->mem pipe and store value in flag
+        read(cpu_to_mem[0], &flag, sizeof(flag));
+        if(flag > -1)
+        {
+            value = memory[flag];
+            cout << "Reading from " << flag << " a value of: " << value << endl;
+            write(mem_to_cpu[1], &value, sizeof(value));
+        }
+        else
+        {
+            read(cpu_to_mem[0], &address, sizeof(address));
+            read(cpu_to_mem[0], &value, sizeof(value));
+            memory[address] = value;
+            cout << "Writing to " << address << " a value of: " << value << endl;
+        }
+    }
+}
+
+////////////////
+/* CPU SECTION*/
+////////////////
+
 
 void execute()
 {
     int address = 0;
+    PC = 0;
+
     while(true)
     {
+        IR = read_from_mem(PC);
         // check for interrupt
         // read from memory into IR
         switch(IR)
@@ -29,6 +149,7 @@ void execute()
                 break;
             case 2:     // Load Address
                 // Load the value at the address into the AC
+                
                 break;
             case 3:     // LoadInd Address
                 // Load the value from the address found in the given address into the AC
@@ -41,10 +162,13 @@ void execute()
                 break;
             case 6:     // LoadSpX
                 // Load from (Sp+X) into the AC 
-                AC = read(SP + X);
+                AC = read_from_mem(SP + X);
                 break;
             case 7:     // Store Address
                 // Store the value in the AC into the address
+                PC++;
+                tempReg = read_from_mem(PC);
+                write_to_mem(tempReg, AC);
                 break;
             case 8:     // Get
                 // Gets a random int from 1 to 100 into the AC
@@ -52,6 +176,17 @@ void execute()
             case 9:     // Put Port
                 // If port=1, writes AC as an int to the screen
                 // If port=2, writes AC as a char to the screen
+                PC++;
+                tempReg = read_from_mem(PC);
+                //should we be printing a \n for a char?
+                if(tempReg == 1)
+                {
+                    printf("%i\n", AC); //print as int
+                }
+                else if(tempReg == 2)
+                {
+                    printf("%c\n", AC); //print as char
+                }
                 break;
             case 10:    // AddX
                 // Add the value in X to the AC
@@ -130,46 +265,48 @@ void execute()
                 break;
             case 50:    // End
                 // End execution
+                /*for(int i = 0; i < memory_size; i++)
+                {
+                    cout << i << " " << memory[i] << endl;
+                }*/
                 return;
                 //break;
             //default:    // Invalid Operation
                 // throw some error, not a valid operation
         }
+        timer++;
+        PC++;
     }
 }
 
 int main(int argc, char *argv[])
 {
+    if (argc > 0)
+    {
+        // call memory execute function
+        loadMemory(argv[1]);
+    }
+    int cpu_mem_success = pipe(cpu_to_mem);
+    int mem_cpu_success = pipe(mem_to_cpu);
+    if(cpu_mem_success == -1 || mem_cpu_success == -1)
+    {
+        return -1;
+    }
+
     pid_t pid;
 
     switch (pid = fork())
     {
-    case -1:
-        /* Here pid is -1, the fork failed */
-        /* Some possible reasons are that you're */
-        /* out of process slots or virtual memory */
-        printf("The fork failed!");
-        exit(-1);
-
-    case 0:
-        /* pid of zero is the child */
-        printf("Child:  hello!\n");
-        if (argc > 1)
-        {
-            cout << argv[1];
-            // call memory execute function
-            loadMemory(argv[1]);
-        }
-        _exit(0);
-
-    default:
-        /* pid greater than zero is parent */
-
-        execute();
-
-        printf("Parent: child's pid is %d\n", pid);
+        case -1:
+            printf("The fork failed!");
+            return -1;
+        case 0:
+            executeMemory();
+            return 0;
+        default:
+            execute();
+            return 0;
     }
-
     return 0;
 }
 
