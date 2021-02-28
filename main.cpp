@@ -13,32 +13,51 @@ using namespace std;
 /* MEMORY SECTION */
 ////////////////////
 
-int PC, SP, IR, AC, X, Y;
-int timer = 0;
-int tempReg = 0;
-int cpu_to_mem[2];
-int mem_to_cpu[2];
-
 const string WHITESPACE = "\n\r\t\f\v";
 const int start_address = 0;
 const int start_system_code = 1000;
 const int memory_size = 2000;
 int memory[memory_size];
 
+int PC, SP, IR, AC, X, Y;
+int timer = 0;
+int tempReg = 0;
+int cpu_to_mem[2];
+int mem_to_cpu[2];
+bool kernelState = false;
+
 int read_from_mem(int address)
 {
-    write(cpu_to_mem[1], &address, sizeof(address));
-    int result;
-    read(mem_to_cpu[0], &result, sizeof(result));
-    return result;
+    if(address > -1 && (address < start_system_code || (kernelState && address < memory_size)))
+    {
+        write(cpu_to_mem[1], &address, sizeof(address));
+        int result;
+        read(mem_to_cpu[0], &result, sizeof(result));
+        return result;
+    }
+    else
+    {
+        string error_message = "Invalid memory access at address: " to_string(address);
+        throw invalid_argument(error_message);
+        exit(-1); 
+    }
 }
 
 bool write_to_mem(int address, int data)
 {
-    int write_flag = -1;
-    write(cpu_to_mem[1], &write_flag, sizeof(write_flag));
-    write(cpu_to_mem[1], &address, sizeof(address));
-    write(cpu_to_mem[1], &data, sizeof(data));
+    if(address > -1 && (address < start_system_code || (kernelState && address < memory_size)))
+    {
+        int write_flag = -1;
+        write(cpu_to_mem[1], &write_flag, sizeof(write_flag));
+        write(cpu_to_mem[1], &address, sizeof(address));
+        write(cpu_to_mem[1], &data, sizeof(data));
+    }
+    else
+    {
+        string error_message = "Invalid memory write at address: " to_string(address);
+        throw invalid_argument(error_message);
+        exit(-1);
+    }
 }
 
 vector<int> readIntFromString(string s)
@@ -135,7 +154,9 @@ void executeMemory()
 void execute()
 {
     int address = 0;
+    int tempReg = 0;
     PC = 0;
+    SP = start_system_code - 1;
 
     while(true)
     {
@@ -146,10 +167,13 @@ void execute()
         {
             case 1:     // Load Value
                 // Load the value into the AC
+                PC++;
+                AC = read_from_mem(PC);
                 break;
             case 2:     // Load Address
                 // Load the value at the address into the AC
-                
+                PC++;
+                AC = read_from_mem(read_from_mem(PC)); //read the value from the address specified by PC
                 break;
             case 3:     // LoadInd Address
                 // Load the value from the address found in the given address into the AC
@@ -230,18 +254,34 @@ void execute()
                 break;
             case 20:    // Jump Address
                 // Jump to the address
+                PC++;
+                PC = read_from_mem(PC) - 1; // Decrement now bc it will be incremented at the end of the loop
                 break;
             case 21:    // JumpIfEqual Address
                 // Jump to the address only if the value in the AC is zero
+                PC++;
+                if(AC == 0)
+                {
+                    PC = read_from_mem(PC) - 1;
+                }
                 break;
             case 22:    // JumpIfNotEqual Address
                 // Jump to the address only if the value in the AC is not zero
+                PC++;
+                if(AC != 0)
+                {
+                    PC = read_from_mem(PC) - 1;
+                }
                 break;
             case 23:    // Call Address
                 // Push return address onto stack, jump to the address
+                SP--;
+                write_to_mem(SP, PC);
                 break;
             case 24:    // Ret
                 // Pop return address from the stack, jump to the address
+                PC = read_from_mem(SP);
+                SP++;
                 break;
             case 25:    // IncX
                 // Increment the value in X
@@ -253,12 +293,27 @@ void execute()
                 break;
             case 27:    // Push
                 // Push AC onto stack
+
+                // TODO: TEST THIS LATER
+                SP--;
+                write_to_mem(SP, AC);
                 break;
             case 28:    // Pop
                 // Pop from stack into AC
+
+                // TODO: TEST THIS LATER!
+                AC = read_from_mem(SP);
+                SP++;
                 break;
             case 29:    // Int
                 // Perform system call
+                if(kernelState != 0)
+                {
+                    break;
+                }
+                kernelState = 1;
+
+
                 break;
             case 30:    // IRet
                 // Return from system call
