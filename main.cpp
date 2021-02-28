@@ -14,6 +14,21 @@ bool write(int address, int data);
 void loadMemory(string fileName);
 string trim(const string& s);
 
+int PC, SP, IR, AC, X, Y;
+
+void execute()
+{
+    int address = 0;
+    while(true)
+    {
+        // check for interrupt
+        // read from memory into IR
+        // if command # is 50, break
+        break;
+        // execute command
+    }
+}
+
 int main(int argc, char *argv[])
 {
     pid_t pid;
@@ -30,6 +45,11 @@ int main(int argc, char *argv[])
     case 0:
         /* pid of zero is the child */
         printf("Child:  hello!\n");
+        if (argc > 1)
+        {
+            cout << argv[1];
+            loadMemory(argv[1]);
+        }
         _exit(0);
 
     default:
@@ -39,12 +59,6 @@ int main(int argc, char *argv[])
         waitpid(-1, NULL, 0);
 
         printf("Parent: child's pid is %d\n", pid);
-    }
-
-    if (argc > 1)
-    {
-        cout << argv[1];
-        loadMemory(argv[1]);
     }
 
     return 0;
