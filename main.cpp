@@ -12,7 +12,6 @@ using namespace std;
 int read(int address);
 bool write(int address, int data);
 void loadMemory(string fileName);
-string trim(const string& s);
 
 int PC, SP, IR, AC, X, Y;
 
@@ -23,9 +22,6 @@ void execute()
     {
         // check for interrupt
         // read from memory into IR
-        // if command # is 50, break
-        break;
-        // execute command
         switch(IR)
         {
             case 1:     // Load Value
@@ -136,7 +132,7 @@ void execute()
                 // End execution
                 return;
                 //break;
-            default:    // Invalid Operation
+            //default:    // Invalid Operation
                 // throw some error, not a valid operation
         }
     }

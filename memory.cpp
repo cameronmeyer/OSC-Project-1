@@ -10,6 +10,7 @@ const string WHITESPACE = "\n\r\t\f\v";
 const int start_address = 0;
 const int start_system_code = 1000;
 const int memory_size = 2000;
+int memory[memory_size];
 
 int read(int address)
 {
@@ -21,10 +22,20 @@ bool write(int address, int data)
     return 0;
 }
 
-string trim(const string& s)
+vector<int> readIntFromString(string s)
 {
-    size_t end = s.find_last_not_of(WHITESPACE);
-    return (end == string::npos) ? "" : s.substr(0, end + 1);
+    string number = s.substr(0, s.find(WHITESPACE));
+    try
+    {
+        std::string::size_type sz;
+        int result = stoi(number, &sz);
+        return vector<int>{1, result};
+    }
+    catch(...)
+    {
+        return vector<int>{-1, 0};
+        cout << ("Not a valid command input");
+    }
 }
 
 void loadMemory(string fileName)
@@ -34,31 +45,38 @@ void loadMemory(string fileName)
     file.open(fileName);
     if (file)
     {
-        string line;
+        string line = "";
+        int memory_Address = 0;
+
         while (getline(file, line))
         {
-            string trimmed = trim(line);
-            if (trimmed != "")
+            if(line.substr(0, 1) == ".")
             {
-                if (trimmed.substr(0, 1) == ".")
+                memory_Address = readIntFromString(line.substr(1, line.length()))[1] - 1; // Decrement by 1 since it'll be added to later
+            }
+            else
+            {
+                vector<int> readInt = readIntFromString(line);
+                int instruction = readInt[1];
+
+                if(readInt[0] != -1)
                 {
-                    //NOTE: memory address
-                   /* int newAddress = readIntegerFromString(trimmed,0);
-                    if(instruction > -1)
+                    if(memory_Address >= 0 && memory_Address < memory_size)
                     {
                         memory[memory_Address] = instruction;
                     }
                     else
                     {
-                        //throw an error
-                    }*/                                                  
+                        // throw an out of bounds error
+                    }
                 }
-                //memory_Address++;
             }
+
+            memory_Address++;
         }
         //REMOVE THIS LATER!!!
         cout << endl;
-        for(int i - 0; i < memory_size; i)))
+        for(int i = 0; i < memory_size; i++)
         {
             cout << i << " " << memory[i] << endl;
         }
