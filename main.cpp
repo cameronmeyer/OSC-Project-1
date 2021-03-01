@@ -6,7 +6,11 @@
 #include <iostream>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <stdexcept>
+#include <exception>
 #include <unistd.h>
+#include <cmath>
+#include <math.h>
 using namespace std;
 
 ////////////////////
@@ -37,7 +41,7 @@ int read_from_mem(int address)
     }
     else
     {
-        string error_message = "Invalid memory access at address: " to_string(address);
+        string error_message = "Invalid memory access at address: " + to_string(address);
         throw invalid_argument(error_message);
         exit(-1); 
     }
@@ -54,7 +58,7 @@ bool write_to_mem(int address, int data)
     }
     else
     {
-        string error_message = "Invalid memory write at address: " to_string(address);
+        string error_message = "Invalid memory write at address: " + to_string(address);
         throw invalid_argument(error_message);
         exit(-1);
     }
@@ -177,12 +181,18 @@ void execute()
                 break;
             case 3:     // LoadInd Address
                 // Load the value from the address found in the given address into the AC
+                PC++;
+                AC = read_from_mem(read_from_mem(read_from_mem(PC)));
                 break;
             case 4:     // LoadIdxX Address
                 // Load the value at (address+X) into the AC
+                PC++;
+                AC = read_from_mem(read_from_mem(read_from_mem(PC)) + X);
                 break;
             case 5:     // LoadIdxY Address
                 // Load the value at (address+Y) into the AC
+                PC++;
+                AC = read_from_mem(read_from_mem(read_from_mem(PC)) + Y);
                 break;
             case 6:     // LoadSpX
                 // Load from (Sp+X) into the AC 
@@ -196,6 +206,8 @@ void execute()
                 break;
             case 8:     // Get
                 // Gets a random int from 1 to 100 into the AC
+                srand(floor(time(0) * M_PI) + PC + AC + IR);
+                AC = (rand() % 100) + 1;
                 break;
             case 9:     // Put Port
                 // If port=1, writes AC as an int to the screen
