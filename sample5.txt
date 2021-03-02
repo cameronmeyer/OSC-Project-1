@@ -1,11 +1,28 @@
-1 // load value into ac
+1 // load a value of 5 into ac
 5 
-7 // write value to address 263
+7 // write value of 5 to address 263
 263
 2 // read value from address 263 to ac
 263 
-9 // print ac to stout
+29 // perform syscall
+9 // put port -- write ac (value of ... 263?) as an int to the screen
 1
-50
-.263
-62
+50 // terminate program
+
+.1000 // timer interrupt section
+27 // push ac onto stack
+1 // load value of 42 into ac
+42 
+9 // put port -- write ac (value of 42) as an int to the screen
+1
+28 // pop from stack into ac
+30 // return from interrupt
+
+.1500 // syscall section
+27 // push ac (value of 5) onto the stack
+1 // load value of 69 into ac
+69
+9 // put port -- write ac (value of 69) as an int to the screen
+1
+28 // pop from stack into ac
+30 // return from syscall

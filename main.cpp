@@ -20,12 +20,15 @@ using namespace std;
 const string WHITESPACE = "\n\r\t\f\v";
 const int start_address = 0;
 const int start_system_code = 1000;
+const int timerIndex = 1000;
+const int syscallIndex = 1500;
 const int memory_size = 2000;
 int memory[memory_size];
 
 int PC, SP, IR, AC, X, Y;
 int timer = 0;
-int tempReg = 0;
+int timerIterations = 0;
+int temp = 0;
 int cpu_to_mem[2];
 int mem_to_cpu[2];
 bool kernelState = false;
@@ -154,6 +157,15 @@ void executeMemory()
 /* CPU SECTION*/
 ////////////////
 
+void kernelMode()
+{
+    kernelState = 1;
+    temp = memory_size - 1;
+    write_to_mem(temp, SP);
+    temp--;
+    write_to_mem(temp, PC);
+    SP = temp;
+}
 
 void execute()
 {
@@ -164,6 +176,15 @@ void execute()
 
     while(true)
     {
+        //cout << "TIMER VALUE: " << timer << endl;
+        if (timer % timerIterations == 0 && timerIterations > 0 && timer > 0 && !kernelState)
+        {
+            cout << "-- ENTERING KERNEL MODE (timer interrupt) -- " << endl;
+            PC--;
+            kernelMode();
+            PC = timerIndex;
+        }
+
         IR = read_from_mem(PC);
         // check for interrupt
         // read from memory into IR
@@ -319,16 +340,26 @@ void execute()
                 break;
             case 29:    // Int
                 // Perform system call
-                if(kernelState != 0)
+                if(kernelState)
                 {
                     break;
                 }
-                kernelState = 1;
-
-
+                cout << "-- ENTERING KERNEL MODE (syscall) -- " << endl;
+                kernelMode();
+                PC = syscallIndex - 1; // will be incremented at the end of the loop
                 break;
             case 30:    // IRet
                 // Return from system call
+                if(!kernelState)
+                {
+                    break;
+                }
+                cout << "-- EXITING KERNEL MODE (ac = " << AC << ") --" << endl;
+                temp = SP;
+                PC = read_from_mem(temp);
+                temp++;
+                SP = read_from_mem(temp);
+                kernelState = 0;
                 break;
             case 50:    // End
                 // End execution
@@ -338,8 +369,10 @@ void execute()
                 }*/
                 return;
                 //break;
-            //default:    // Invalid Operation
+            default:    // Invalid Operation
                 // throw some error, not a valid operation
+                PC--;
+                timer--;
         }
         timer++;
         PC++;
@@ -352,6 +385,13 @@ int main(int argc, char *argv[])
     {
         // call memory execute function
         loadMemory(argv[1]);
+
+        if(argc > 1)
+        {
+            string::size_type sz;
+            timerIterations = stoi(argv[2], &sz);
+            cout << "timer iterations: " << timerIterations << endl;
+        }
     }
     int cpu_mem_success = pipe(cpu_to_mem);
     int mem_cpu_success = pipe(mem_to_cpu);
