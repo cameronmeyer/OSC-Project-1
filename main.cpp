@@ -44,7 +44,7 @@ int read_from_mem(int address)
     }
     else
     {
-        string error_message = "Invalid memory access at address: " + to_string(address);
+        string error_message = "Error: Invalid memory access at address: " + to_string(address);
         throw invalid_argument(error_message);
         exit(-1); 
     }
@@ -61,7 +61,7 @@ bool write_to_mem(int address, int data)
     }
     else
     {
-        string error_message = "Invalid memory write at address: " + to_string(address);
+        string error_message = "Error: Invalid memory write at address: " + to_string(address);
         throw invalid_argument(error_message);
         exit(-1);
     }
@@ -112,6 +112,9 @@ void loadMemory(string fileName)
                     else
                     {
                         // throw an out of bounds error
+                        string error_message = "Error: Invalid memory access at address: " + to_string(memory_Address);
+                        throw out_of_range(error_message);
+                        exit(-1);
                     }
                 }
             }
@@ -122,7 +125,9 @@ void loadMemory(string fileName)
     }
     else
     {
-        cout << "File not found." << endl;
+        string error_message = "Error: File " + fileName + " not found.";
+        throw invalid_argument(error_message);
+        exit(-1);
     }
 }
 
@@ -140,7 +145,7 @@ void executeMemory()
         if(flag > -1)
         {
             value = memory[flag];
-            cout << "Reading from " << flag << " a value of: " << value << endl;
+            //cout << "Reading from " << flag << " a value of: " << value << endl;
             write(mem_to_cpu[1], &value, sizeof(value));
         }
         else
@@ -148,7 +153,7 @@ void executeMemory()
             read(cpu_to_mem[0], &address, sizeof(address));
             read(cpu_to_mem[0], &value, sizeof(value));
             memory[address] = value;
-            cout << "Writing to " << address << " a value of: " << value << endl;
+            //cout << "Writing to " << address << " a value of: " << value << endl;
         }
     }
 }
@@ -179,7 +184,7 @@ void execute()
         //cout << "TIMER VALUE: " << timer << endl;
         if (timer % timerIterations == 0 && timerIterations > 0 && timer > 0 && !kernelState)
         {
-            cout << "-- ENTERING KERNEL MODE (timer interrupt) -- " << endl;
+            //cout << "-- ENTERING KERNEL MODE (timer interrupt) -- " << endl;
             PC--;
             kernelMode();
             PC = timerIndex;
@@ -242,7 +247,7 @@ void execute()
                 }
                 else if(tempReg == 2)
                 {
-                    printf("%c\n", AC); //print as char
+                    printf("%c", AC); //print as char
                 }
                 break;
             case 10:    // AddX
@@ -309,7 +314,9 @@ void execute()
             case 23:    // Call Address
                 // Push return address onto stack, jump to the address
                 SP--;
+                PC++;
                 write_to_mem(SP, PC);
+                PC = read_from_mem(PC) - 1; // Decrement now bc it will be incremented at the end of the loop
                 break;
             case 24:    // Ret
                 // Pop return address from the stack, jump to the address
@@ -326,15 +333,11 @@ void execute()
                 break;
             case 27:    // Push
                 // Push AC onto stack
-
-                // TODO: TEST THIS LATER
                 SP--;
                 write_to_mem(SP, AC);
                 break;
             case 28:    // Pop
                 // Pop from stack into AC
-
-                // TODO: TEST THIS LATER!
                 AC = read_from_mem(SP);
                 SP++;
                 break;
@@ -344,7 +347,7 @@ void execute()
                 {
                     break;
                 }
-                cout << "-- ENTERING KERNEL MODE (syscall) -- " << endl;
+                //cout << "-- ENTERING KERNEL MODE (syscall) -- " << endl;
                 kernelMode();
                 PC = syscallIndex - 1; // will be incremented at the end of the loop
                 break;
@@ -354,7 +357,7 @@ void execute()
                 {
                     break;
                 }
-                cout << "-- EXITING KERNEL MODE (ac = " << AC << ") --" << endl;
+                //cout << "-- EXITING KERNEL MODE (ac = " << AC << ") --" << endl;
                 temp = SP;
                 PC = read_from_mem(temp);
                 temp++;
@@ -371,8 +374,9 @@ void execute()
                 //break;
             default:    // Invalid Operation
                 // throw some error, not a valid operation
-                PC--;
-                timer--;
+                string error_message = "Error: Invalid CPU instruction of value: " + to_string(IR);
+                throw invalid_argument(error_message);
+                exit(-1);
         }
         timer++;
         PC++;
@@ -390,7 +394,7 @@ int main(int argc, char *argv[])
         {
             string::size_type sz;
             timerIterations = stoi(argv[2], &sz);
-            cout << "timer iterations: " << timerIterations << endl;
+            //cout << "timer iterations: " << timerIterations << endl;
         }
     }
     int cpu_mem_success = pipe(cpu_to_mem);

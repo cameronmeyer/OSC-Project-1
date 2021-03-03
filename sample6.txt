@@ -1,0 +1,45 @@
+1 // load value into ac
+5 
+7 // write value to address 263
+263
+2 // read value from address 263 to ac
+263 
+29
+9 // print ac to stout
+1
+23
+420
+20
+150
+
+.150
+50
+.263
+62
+
+.1000
+30
+
+.1500
+27
+1
+69
+9
+1
+28
+30
+
+.420
+1   // Load 72=H
+72
+9   // Put 2
+2
+1   // Load 73=I
+73
+9   // Put 2
+2
+1   // Load 10=newline
+10 
+9   // Put 2
+2
+24  // Return
