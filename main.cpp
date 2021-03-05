@@ -37,6 +37,11 @@ int read_from_mem(int address)
 {
     if(address > -1 && (address < start_system_code || (kernelState && address < memory_size)))
     {
+        //if(address == 1000)
+        //{
+        //    cout << "PC: " << to_string(PC) << ", address: " << to_string(address) << ", is in kernelState: " << kernelState << endl;
+        //}
+
         write(cpu_to_mem[1], &address, sizeof(address));
         int result;
         read(mem_to_cpu[0], &result, sizeof(result));
@@ -97,6 +102,8 @@ void loadMemory(string fileName)
             if(line.substr(0, 1) == ".")
             {
                 memory_Address = readIntFromString(line.substr(1, line.length()))[1] - 1; // Decrement by 1 since it'll be added to later
+
+                //TODO: Throw an error if the memory address is out of bounds
             }
             else
             {
@@ -116,6 +123,10 @@ void loadMemory(string fileName)
                         throw out_of_range(error_message);
                         exit(-1);
                     }
+                }
+                else
+                {
+                    memory_Address--; //If an entire line of input should be skipped (blank lines, comments, etc.)
                 }
             }
 
@@ -162,14 +173,26 @@ void executeMemory()
 /* CPU SECTION*/
 ////////////////
 
+void pushToStack(int data)
+{
+    SP--;
+    write_to_mem(SP, data);
+}
+
+int popFromStack()
+{
+    int temp = read_from_mem(SP);
+    SP++;
+    return temp;
+}
+
 void kernelMode()
 {
-    kernelState = 1;
-    temp = memory_size - 1;
-    write_to_mem(temp, SP);
-    temp--;
-    write_to_mem(temp, PC);
-    SP = temp;
+    kernelState = true;
+    temp = SP;
+    SP = memory_size - 1;
+    pushToStack(temp);
+    pushToStack(PC);
 }
 
 void execute()
@@ -213,12 +236,12 @@ void execute()
             case 4:     // LoadIdxX Address
                 // Load the value at (address+X) into the AC
                 PC++;
-                AC = read_from_mem(read_from_mem(read_from_mem(PC)) + X);
+                AC = read_from_mem(read_from_mem(PC) + X);
                 break;
             case 5:     // LoadIdxY Address
                 // Load the value at (address+Y) into the AC
                 PC++;
-                AC = read_from_mem(read_from_mem(read_from_mem(PC)) + Y);
+                AC = read_from_mem(read_from_mem(PC) + Y);
                 break;
             case 6:     // LoadSpX
                 // Load from (Sp+X) into the AC 
@@ -243,7 +266,7 @@ void execute()
                 //should we be printing a \n for a char?
                 if(tempReg == 1)
                 {
-                    printf("%i\n", AC); //print as int
+                    printf("%i", AC); //print as int
                 }
                 else if(tempReg == 2)
                 {
@@ -313,15 +336,13 @@ void execute()
                 break;
             case 23:    // Call Address
                 // Push return address onto stack, jump to the address
-                SP--;
                 PC++;
-                write_to_mem(SP, PC);
+                pushToStack(PC);
                 PC = read_from_mem(PC) - 1; // Decrement now bc it will be incremented at the end of the loop
                 break;
             case 24:    // Ret
                 // Pop return address from the stack, jump to the address
-                PC = read_from_mem(SP);
-                SP++;
+                PC = popFromStack();
                 break;
             case 25:    // IncX
                 // Increment the value in X
@@ -333,13 +354,11 @@ void execute()
                 break;
             case 27:    // Push
                 // Push AC onto stack
-                SP--;
-                write_to_mem(SP, AC);
+                pushToStack(AC);
                 break;
             case 28:    // Pop
                 // Pop from stack into AC
-                AC = read_from_mem(SP);
-                SP++;
+                AC = popFromStack();
                 break;
             case 29:    // Int
                 // Perform system call
@@ -357,12 +376,14 @@ void execute()
                 {
                     break;
                 }
-                //cout << "-- EXITING KERNEL MODE (ac = " << AC << ") --" << endl;
-                temp = SP;
-                PC = read_from_mem(temp);
-                temp++;
-                SP = read_from_mem(temp);
-                kernelState = 0;
+                //cout << "-- EXITING KERNEL MODE (ac = " << AC << ", sp = " << SP << ") --" << endl;
+                PC = popFromStack();
+                SP = popFromStack();
+                //temp = SP + 1;
+                //PC = read_from_mem(temp);
+                //temp++;
+                //SP = read_from_mem(temp) + 1;
+                kernelState = false;
                 break;
             case 50:    // End
                 // End execution
@@ -370,11 +391,12 @@ void execute()
                 {
                     cout << i << " " << memory[i] << endl;
                 }*/
+                //cout << "-- THIS IS THE END --" << endl;
                 return;
                 //break;
             default:    // Invalid Operation
-                // throw some error, not a valid operation
-                string error_message = "Error: Invalid CPU instruction of value: " + to_string(IR);
+                // throw error, not a valid operation
+                string error_message = "Error: Invalid CPU instruction of value: " + to_string(IR) + " at PC of: " + to_string(PC);
                 throw invalid_argument(error_message);
                 exit(-1);
         }
