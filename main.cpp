@@ -13,20 +13,20 @@
 #include <math.h>
 using namespace std;
 
-const string WHITESPACE = "\n\r\t\f\v";
-const int startSystemCode = 1000;
-const int timerIndex = 1000;
-const int syscallIndex = 1500;
-const int memoryCapacity = 2000;
-int memory[memoryCapacity];
+const string WHITESPACE = "\n\r\t\f\v"; // Whitespace characters for parsing the input file
+const int startSystemCode = 1000;       // Starting index of system code
+const int timerIndex = 1000;            // Index used for timer interrupts
+const int syscallIndex = 1500;          // Index used for system calls
+const int memoryCapacity = 2000;        // Total indices used for memory
+int memory[memoryCapacity];             // Memory array
 
-int PC, SP, IR, AC, X, Y;
-int timer = 0;
-int timerIterations = 0;
-int temp = 0;
-int cpuToMem[2];
-int memToCpu[2];
-bool kernelState = false;
+int PC, SP, IR, AC, X, Y;               // Registers
+int timer = 0;                          // Timer
+int timerIterations = 0;                // Number of iterations necessary to trigger a timer interrupt
+int temp = 0;                           // Temporary register to help with processing
+int cpuToMem[2];                        // File descriptor for CPU -> memory pipe
+int memToCpu[2];                        // File descriptor for memory -> CPU pipe
+bool kernelState = false;               // Toggle for entering the kernel state
 
 ////////////////////
 /* MEMORY SECTION */
@@ -34,6 +34,7 @@ bool kernelState = false;
 
 int readFromMem(int address)
 {
+    // Ensure address is within proper bounds depending on if it is in the kernel state
     if(address > -1 && (address < startSystemCode || (kernelState && address < memoryCapacity)))
     {
         int data;
@@ -51,12 +52,14 @@ int readFromMem(int address)
 
 bool writeToMem(int address, int data)
 {
+    // Ensure address is within proper bounds depending on if it is in the kernel state
     if(address > -1 && (address < startSystemCode || (kernelState && address < memoryCapacity)))
     {
         int writeFlag = -1;
         write(cpuToMem[1], &writeFlag, sizeof(writeFlag));
         write(cpuToMem[1], &address, sizeof(address));
         write(cpuToMem[1], &data, sizeof(data));
+        return true;
     }
     else
     {
@@ -68,17 +71,17 @@ bool writeToMem(int address, int data)
 
 vector<int> getIntFromString(string s)
 {
-    string number = s.substr(0, s.find(WHITESPACE));
+    string number = s.substr(0, s.find(WHITESPACE)); // Only use the beginning of the line until whitespace is found
     try
     {
+        // Convert string to int
         std::string::size_type sz;
         int result = stoi(number, &sz);
-        return vector<int>{1, result};
+        return vector<int>{1, result}; // Index 0 in this vector indicates a success
     }
     catch(...)
     {
-        return vector<int>{-1, 0};
-        cout << "Not a valid command input" << endl;
+        return vector<int>{-1, 0}; // Index 0 in this vector indicates a failure for int conversion
     }
 }
 
@@ -91,19 +94,20 @@ void populateMemory(string fileName)
         string input = "";
         int memoryAddress = 0;
 
+        // Continuously read each line of input from the file
         while(getline(file, input))
         {
+            // Check if the line is a memory address
             if(input.substr(0, 1) == ".")
             {
-                int tempAddress = getIntFromString(input.substr(1, input.length()))[1] - 1;
-                if(tempAddress >= -1 && tempAddress < memoryCapacity)
+                int tempAddress = getIntFromString(input.substr(1, input.length()))[1] - 1; // Decrement by 1 since memory address will be added to later
+                if(tempAddress >= -1 && tempAddress < memoryCapacity) // Ensure the address is within bounds of the memory
                 {
-                    memoryAddress = tempAddress; // Decrement by 1 since it'll be added to later
+                    memoryAddress = tempAddress;
                 }
                 else
                 {
-                    // throw an out of bounds error
-                    string errorMessage = "Error: Invalid memory write at address: " + to_string(tempAddress)  + " with a PC of " + to_string(PC);
+                    string errorMessage = "Error: Invalid memory write at address: " + to_string(tempAddress);
                     throw out_of_range(errorMessage);
                     exit(-1);
                 }
@@ -113,15 +117,15 @@ void populateMemory(string fileName)
                 vector<int> readInt = getIntFromString(input);
                 int instruction = readInt[1];
 
+                // If we successfully read an int from the input line
                 if(readInt[0] != -1)
                 {
-                    if(memoryAddress >= 0 && memoryAddress < memoryCapacity)
+                    if(memoryAddress >= 0 && memoryAddress < memoryCapacity) // Ensure the address is within bounds of the memory
                     {
                         memory[memoryAddress] = instruction;
                     }
                     else
                     {
-                        // throw an out of bounds error
                         string errorMessage = "Error: Invalid memory write at address: " + to_string(memoryAddress);
                         throw out_of_range(errorMessage);
                         exit(-1);
@@ -129,7 +133,7 @@ void populateMemory(string fileName)
                 }
                 else
                 {
-                    memoryAddress--; //If an entire line of input should be skipped (blank lines, comments, etc.)
+                    memoryAddress--; // Skip an entire line of input (used for blank lines, comments, etc.)
                 }
             }
 
@@ -147,20 +151,21 @@ void populateMemory(string fileName)
 
 void executeMemory()
 {
-    int address; // if writing to memory, this is the address to write to
-    int data; // value being written to memory or read from memory
-    int readWriteFlag; // -1 if writing data to memory, contains an address if reading from memory
+    int address;        // If writing to memory, this is the address to write to
+    int data;           // Value being written to memory or read from memory
+    int readWriteFlag;  // -1 if writing data to memory, contains an address if reading from memory
 
     while(true)
     {
-        //read from cpu->mem pipe to check if we will read or write our memory
+        // Read from CPU -> memory pipe to check if we will read or write our memory
         read(cpuToMem[0], &readWriteFlag, sizeof(readWriteFlag));
-        if(readWriteFlag > -1) // if the flag is greater than -1 it will contain an address we can read from
+
+        if(readWriteFlag > -1) // If the flag is greater than -1 it will contain an address we can read from
         {
             data = memory[readWriteFlag];
             write(memToCpu[1], &data, sizeof(data));
         }
-        else
+        else // Write data into the appropriate memory address
         {
             read(cpuToMem[0], &address, sizeof(address));
             read(cpuToMem[0], &data, sizeof(data));
@@ -186,11 +191,11 @@ int popStack()
     return temp;
 }
 
-void kernelMode()
+void kernelMode() // Triggers the kernel state and pushes SP and PC to the stack
 {
     kernelState = true;
     temp = SP;
-    SP = memoryCapacity;// - 1;
+    SP = memoryCapacity;
     pushStack(temp);
     pushStack(PC);
 }
@@ -199,126 +204,102 @@ void execute()
 {
     int address = 0;
     PC = 0;
-    SP = startSystemCode;// - 1;
+    SP = startSystemCode;
 
     while(true)
     {
-        //cout << "TIMER VALUE: " << timer << endl;
+        // Check for a timer interrupt if we aren't already in the kernel state
         if(timer % timerIterations == 0 && timerIterations > 0 && timer > 0 && !kernelState)
         {
-            //cout << "-- ENTERING KERNEL MODE (timer interrupt) -- " << endl;
             PC--;
             kernelMode();
             PC = timerIndex;
         }
 
+        // Fetch the current command from memory
         IR = readFromMem(PC);
-        // check for interrupt
-        // read from memory into IR
+
         switch(IR)
         {
             case 1:     // Load Value
-                // Load the value into the AC
                 PC++;
                 AC = readFromMem(PC);
                 break;
             case 2:     // Load Address
-                // Load the value at the address into the AC
                 PC++;
-                AC = readFromMem(readFromMem(PC)); //read the value from the address specified by PC
+                AC = readFromMem(readFromMem(PC));
                 break;
             case 3:     // LoadInd Address
-                // Load the value from the address found in the given address into the AC
                 PC++;
                 AC = readFromMem(readFromMem(readFromMem(PC)));
                 break;
             case 4:     // LoadIdxX Address
-                // Load the value at (address+X) into the AC
                 PC++;
                 AC = readFromMem(readFromMem(PC) + X);
                 break;
             case 5:     // LoadIdxY Address
-                // Load the value at (address+Y) into the AC
                 PC++;
                 AC = readFromMem(readFromMem(PC) + Y);
                 break;
             case 6:     // LoadSpX
-                // Load from (Sp+X) into the AC 
                 AC = readFromMem(SP + X);
                 break;
             case 7:     // Store Address
-                // Store the value in the AC into the address
                 PC++;
                 temp = readFromMem(PC);
                 writeToMem(temp, AC);
                 break;
-            case 8:     // Get
-                // Gets a random int from 1 to 100 into the AC
+            case 8:     // Get random int (1 to 100) and store in AC
                 srand(floor(time(0) * M_PI) + PC + AC + IR);
                 AC = (rand() % 100) + 1;
                 break;
             case 9:     // Put Port
-                // If port=1, writes AC as an int to the screen
-                // If port=2, writes AC as a char to the screen
                 PC++;
                 temp = readFromMem(PC);
-                //should we be printing a \n for a char?
                 if(temp == 1)
                 {
-                    printf("%i", AC); //print as int
+                    printf("%i", AC); // Print AC as int
                 }
                 else if(temp == 2)
                 {
-                    printf("%c", AC); //print as char
+                    printf("%c", AC); // Print AC as char
                 }
                 break;
             case 10:    // AddX
-                // Add the value in X to the AC
                 AC += X;
                 break;
             case 11:    // AddY
-                // Add the value in Y to the AC
                 AC += Y;
                 break;
             case 12:    // SubX
-                // Subtract the value in X from the AC
                 AC -= X;
                 break;
             case 13:    // SubY
-                // Subtract the value in Y from the AC
                 AC -= Y;
                 break;
             case 14:    // CopyToX
-                // Copy the value in the AC to X
                 X = AC;
                 break;
             case 15:    // CopyFromX
-                // Copy the value in X to the AC
                 AC = X;
                 break;
             case 16:    // CopyToY
-                // Copy the value in the AC to Y
                 Y = AC;
                 break;
             case 17:    // CopyFromY
-                // Copy the value in Y to the AC
                 AC = Y;
                 break;
             case 18:    // CopyToSp
-                // Copy the value in AC to the SP
                 SP = AC;
                 break;
             case 19:    // CopyFromSp
-                // Copy the value in SP to the AC 
                 AC = SP;
                 break;
             case 20:    // Jump Address
-                // Jump to the address
                 PC++;
-                PC = readFromMem(PC) - 1; // Decrement now bc it will be incremented at the end of the loop
+                PC = readFromMem(PC) - 1; // Decrement now since it will be incremented at the end of the loop to the acutal desired value
                 break;
             case 21:    // JumpIfEqual Address
-                // Jump to the address only if the value in the AC is zero
                 PC++;
                 if(AC == 0)
                 {
@@ -326,7 +307,6 @@ void execute()
                 }
                 break;
             case 22:    // JumpIfNotEqual Address
-                // Jump to the address only if the value in the AC is not zero
                 PC++;
                 if(AC != 0)
                 {
@@ -340,55 +320,41 @@ void execute()
                 PC = readFromMem(PC) - 1; // Decrement now bc it will be incremented at the end of the loop
                 break;
             case 24:    // Ret
-                // Pop return address from the stack, jump to the address
                 PC = popStack();
                 break;
             case 25:    // IncX
-                // Increment the value in X
                 X++;
                 break;
             case 26:    // DecX
-                // Decrement the value in X
                 X--;
                 break;
             case 27:    // Push
-                // Push AC onto stack
                 pushStack(AC);
                 break;
             case 28:    // Pop
-                // Pop from stack into AC
                 AC = popStack();
                 break;
             case 29:    // Int
-                // Perform system call
                 if(kernelState)
                 {
-                    break;
+                    break; // Do not perform a syscall if already in the kernel state
                 }
-                //cout << "-- ENTERING KERNEL MODE (syscall) -- " << endl;
                 kernelMode();
-                PC = syscallIndex - 1; // will be incremented at the end of the loop
+                PC = syscallIndex - 1; // Set PC to 1 less than desired since the loop will increment it later
                 break;
             case 30:    // IRet
-                // Return from system call
                 if(!kernelState)
                 {
-                    break;
+                    break; // Do not return from the kernel state if you weren't in the kernel state
                 }
-                //cout << "-- EXITING KERNEL MODE (ac = " << AC << ", sp = " << SP << ") --" << endl;
+
                 PC = popStack();
                 SP = popStack();
-                //temp = SP + 1;
-                //PC = readFromMem(temp);
-                //temp++;
-                //SP = readFromMem(temp) + 1;
                 kernelState = false;
                 break;
             case 50:    // End
-                // End execution
                 return;
             default:    // Invalid Operation
-                // throw error, not a valid operation
                 string errorMessage = "Error: Invalid CPU instruction of value: " + to_string(IR);
                 throw invalid_argument(errorMessage);
                 exit(-1);
@@ -402,15 +368,18 @@ int main(int argc, char *argv[])
 {
     if(argc > 0)
     {
-        // call memory execute function
+        // Populate memory with contents from input file
         populateMemory(argv[1]);
 
+        // Set iterations until timer interrupt
         if(argc > 1)
         {
             string::size_type sz;
             timerIterations = stoi(argv[2], &sz);
         }
     }
+
+    // Set up pipes
     int validCtoM = pipe(cpuToMem);
     int validMtoC = pipe(memToCpu);
     if(validCtoM == -1 || validMtoC == -1)
@@ -420,6 +389,7 @@ int main(int argc, char *argv[])
 
     pid_t pid;
 
+    // Fork the process and execute memory or CPU functions
     switch(pid = fork())
     {
         case -1:
