@@ -1,3 +1,8 @@
+// Author: Cameron Meyer (cdm180003)
+// Project 1
+// CS 4348.001
+
+
 #include <stack>
 #include <string>
 #include <fstream>
@@ -13,7 +18,7 @@
 #include <math.h>
 using namespace std;
 
-const string WHITESPACE = "\n\r\t\f\v"; // Whitespace characters for parsing the input file
+const string space = "\n\t\r\v\f";      // Whitespace characters for parsing the input file
 const int startSystemCode = 1000;       // Starting index of system code
 const int timerIndex = 1000;            // Index used for timer interrupts
 const int syscallIndex = 1500;          // Index used for system calls
@@ -71,7 +76,7 @@ bool writeToMem(int address, int data)
 
 vector<int> getIntFromString(string s)
 {
-    string number = s.substr(0, s.find(WHITESPACE)); // Only use the beginning of the line until whitespace is found
+    string number = s.substr(0, s.find(space)); // Only use the beginning of the line until whitespace is found
     try
     {
         // Convert string to int

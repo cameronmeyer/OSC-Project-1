@@ -1,28 +1,550 @@
-1 // load a value of 5 into ac
-5 
-7 // write value of 5 to address 263
-263
-2 // read value from address 263 to ac
-263 
-29 // perform syscall
-9 // put port -- write ac (value of ... 263?) as an int to the screen
-1
-50 // terminate program
+//-- LINE 1 --//
+1   // print 5 spaces
+5
+23
+850
+23  // print "___"
+700
+1   // print 8 spaces
+8
+23
+850
+23  // print "___"
+700
+1   // print 11 spaces
+11
+23
+850
+23  // print "___"
+700
+23  // print newline
+900
 
-.1000 // timer interrupt section
-27 // push ac onto stack
-1 // load value of 42 into ac
-42 
-9 // put port -- write ac (value of 42) as an int to the screen
-1
-28 // pop from stack into ac
-30 // return from interrupt
+//-- LINE 2 --//
+1   // print 4 spaces
+4
+23
+850
+1   // print "/"
+47
+9
+2
+1   // print "\"
+92
+9
+2
+23  // print "__\"
+800
+1   // print 6 spaces
+6
+23
+850
+1   // print "/"
+47
+9
+2
+1   // print "\"
+92
+9
+2
+23  // print "  \"
+650
+1   // print 9 spaces
+9
+23
+850
+1   // print "/"
+47
+9
+2
+1   // print "\"
+92
+9
+2
+23  // print "  \"
+650
+23  // print newline
+900
 
-.1500 // syscall section
-27 // push ac (value of 5) onto the stack
-1 // load value of 69 into ac
-69
-9 // put port -- write ac (value of 69) as an int to the screen
+//-- LINE 3 --//
+1   // print 3 spaces
+3
+23
+850
+23  // print "/:/"
+500
+23  // print "  /"
+600
+1   // print 6 spaces
+6
+23
+850
+23  // print "\:\"
+550
+23  // print "  \"
+650
+1   // print 7 spaces
+7
+23
+850
+1   // print "/"
+47
+9
+2
+1   // print "::"
+58
+9
+2
+9
+2
+1   // print "\"
+92
+9
+2
+23  // print "  \"
+650
+23  // print newline
+900
+
+//-- LINE 4 --//
+1   // print 2 spaces
+2
+23
+850
+23  // print "/:/"
+500
+23  // print "  /"
+600
+1   // print 8 spaces
+8
+23
+850
+23  // print "\:\"
+550
+23  // print "  \"
+650
+1   // print 5 spaces
+5
+23
+850
+23  // print "/:/"
+500
+23  // print "\:\"
+550
+23  // print "  \"
+650
+23  // print newline
+900
+
+//-- LINE 5 --//
+1   // print 1 space
 1
-28 // pop from stack into ac
-30 // return from syscall
+23
+850
+23  // print "/:/"
+500
+23  // print "  /"
+600
+1   // print 2 spaces
+2
+23
+850
+23  // print "___"
+700
+1   // print 4 spaces
+4
+23
+850
+1   // print "/"
+47
+9
+2
+1   // print "::"
+58
+9
+2
+9
+2
+1   // print "\"
+92
+9
+2
+23  // print "  \"
+650
+1   // print 3 spaces
+3
+23
+850
+23  // print "/:/"
+500
+1   // print 2 spaces
+2
+23
+850
+23  // print "\:\"
+550
+23  // print "__\"
+800
+23  // print newline
+900
+
+//-- LINE 6 --//
+23  // print "/:/"
+500
+23  // print "__/"
+750
+23  // print "  /"
+600
+1   // print "\"
+92
+9
+2
+23  // print "__\"
+800
+1   // print 2 spaces
+2
+23
+850
+23  // print "/:/"
+500
+23  // print "\:\"
+550
+23  // print "__\"
+800
+1   // print 1 space
+1
+23
+850
+23  // print "/:/"
+500
+23  // print "__/"
+750
+1   // print 1 space
+1
+23
+850
+1   // print "\"
+92
+9
+2
+1   // print ":"
+58
+9
+2
+1   // print "|"
+124
+9
+2
+1   // print "__"
+95
+9
+2
+9
+2
+1   // print "|"
+124
+9
+2
+23  // print newline
+900
+
+//-- LINE 7 --//
+23  // print "\:\"
+550
+23  // print "  \"
+650
+1   // print 1 space
+1
+23
+850
+23  // print "/:/"
+500
+23  // print "  /"
+600
+1   // print 1 space
+1
+23
+850
+23  // print "/:/"
+500
+23  // print "  \"
+650
+1   // print "/"
+47
+9
+2
+23  // print "__/"
+750
+1   // print 1 space
+1
+23
+850
+23  // print "\:\"
+550
+23  // print "  \"
+650
+1   // print 1 space
+1
+23
+850
+23  // print "/:/"
+500
+23  // print "__/"
+750
+23  // print newline
+900
+
+//-- LINE 8 --//
+1    // print 1 space
+1
+23
+850
+23  // print "\:\"
+550
+1   // print 2 spaces
+2
+23
+850
+23  // print "/:/"
+500
+23  // print "  /"
+600
+1   // print 1 space
+1
+23
+850
+23  // print "/:/"
+500
+23  // print "  /"
+600
+1   // print 7 spaces
+7
+23
+850
+23  // print "\:\"
+550
+1   // print 2 spaces
+2
+23
+850
+23  // print "/:/"
+500
+23  // print "  /"
+600
+23  // print newline
+900
+
+//-- LINE 9 --//
+1   // print 2 spaces
+2
+23
+850
+23  // print "\:\"
+550
+23  // print "/:/"
+500
+23  // print "  /"
+600
+1   // print 1 space
+1
+23
+850
+23  // print "/:/"
+500
+23  // print "  /"
+600
+1   // print 9 spaces
+9
+23
+850
+23  // print "\:\"
+550
+23  // print "/:/"
+500
+23  // print "  /"
+600
+23  // print newline
+900
+
+//-- LINE 10 --//
+1   // print 3 spaces
+3
+23
+850
+1   // print "\"
+92
+9
+2
+1   // print "::"
+58
+9
+2
+9
+2
+1   // print "/"
+47
+9
+2
+23  // print "  /"
+600
+23  // print "  \"
+650
+1   // print "/"
+47
+9
+2
+23  // print "__/"
+750
+1   // print 11 spaces
+11
+23
+850
+1   // print "\"
+92
+9
+2
+23  // print "__/"
+750
+23  // print "__/"
+750
+23  // print newline
+900
+
+//-- LINE 11 --//
+1   // print 4 spaces
+4
+23
+850
+1   // print "\"
+92
+9
+2
+1   // print "/"
+47
+9
+2
+23  // print "__/"
+750
+23  // print newline
+900
+50
+
+.500    // section to print "/:/"
+1
+47
+9
+2
+1
+58
+9
+2
+1
+47
+9
+2
+24
+
+.550    // section to print "\:\"
+1
+92
+9
+2
+1
+58
+9
+2
+1
+92
+9
+2
+24
+
+.600    // section to print "  /"
+1
+32
+9
+2
+9
+2
+1
+47
+9
+2
+24
+
+.650    // section to print "  \"
+1
+32
+9
+2
+1
+32
+9
+2
+1
+92
+9
+2
+24
+
+.700    // section to print "___"
+1
+95
+9
+2
+9
+2
+9
+2
+24
+
+.750    // section to print "__/"
+1
+95
+9
+2
+9
+2
+1
+47
+9
+2
+24
+
+.800    // section to print "__\"
+1
+95
+9
+2
+9
+2
+1
+92
+9
+2
+24
+
+.850    // section to print any number of spaces, assuming AC = # of spaces
+14  // load AC into X
+1   // print space
+32
+9
+2
+26  // decrement X
+15  // load X into AC
+22  // jump to mem address 851 if AC != 0
+851
+24
+
+.900    // section to print a newline
+1
+10
+9
+2
+24
+
+.1000   // timer interrupt
+30
+
+.1500   // syscall interrupt
+30
