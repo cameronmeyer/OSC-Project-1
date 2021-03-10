@@ -15,6 +15,10 @@ main.cpp
    Can accept input from a text file and interpret contents as
    instructions to be executed. 
 
+readme.txt
+   Provides compile instructions and lists the files present in the
+   submission. You are here.
+
 sample1.txt
    [PROVIDED EXAMPLE FILE]
    Tests the indexed load instructions.
